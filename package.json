@@ -1,0 +1,66 @@
+{
+  "name": "@aatulwork/customform-renderer",
+  "version": "1.2.0",
+  "description": "A powerful, reusable form renderer component for React with Material-UI support",
+  "main": "dist/index.js",
+  "module": "dist/index.esm.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "lib",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "build:watch": "tsup --watch",
+    "build:clean": "rm -rf dist && npm run build",
+    "dev": "tsup --watch",
+    "prepublishOnly": "npm run build",
+    "prebuild": "npm run lint:check",
+    "lint:check": "tsc --noEmit",
+    "version:patch": "npm version patch --no-git-tag-version",
+    "version:minor": "npm version minor --no-git-tag-version",
+    "version:major": "npm version major --no-git-tag-version",
+    "publish:patch": "npm run version:patch && npm run build && npm publish",
+    "publish:minor": "npm run version:minor && npm run build && npm publish",
+    "publish:major": "npm run version:major && npm run build && npm publish",
+    "publish:beta": "npm run build && npm publish --tag beta",
+    "publish:next": "npm run build && npm publish --tag next",
+    "publish:public": "npm run build && npm publish --access public",
+    "publish:dry-run": "npm run build && npm publish --dry-run",
+    "prepublish": "npm run build",
+    "postpublish": "echo 'Package published successfully!'"
+  },
+  "keywords": [
+    "react",
+    "form",
+    "form-renderer",
+    "material-ui",
+    "react-hook-form",
+    "dynamic-forms",
+    "form-builder"
+  ],
+  "author": "aatulwork",
+  "license": "MIT",
+  "peerDependencies": {
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "@mui/material": "^6.0.0",
+    "@mui/icons-material": "^6.0.0",
+    "@mui/x-date-pickers": "^7.0.0",
+    "react-hook-form": "^7.0.0",
+    "@tanstack/react-query": "^5.0.0",
+    "dayjs": "^1.11.0",
+    "@ckeditor/ckeditor5-react": "^11.0.0"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "typescript": "^5.2.0",
+    "tsup": "^8.0.0"
+  }
+}
