@@ -115,11 +115,26 @@ export const FormRenderer = ({
 
     if (onSubmit) {
       try {
-        await onSubmit(transformedData);
-        if (onSuccess) {
-          reset(initialValues || {});
-          onSuccess();
-        }
+        await onSubmit(transformedData); 
+        
+        // After successful submit, reset form
+        const resetValues = initialValues || {};
+        reset(resetValues, {
+          keepErrors: false,
+          keepDirty: false,
+          keepTouched: false,
+          keepIsSubmitted: false,
+          keepSubmitCount: false,
+        });
+        
+        // Clear errors after reset completes
+        // This is needed because CKEditor's onBlur may fire after reset,
+        // marking the field as touched and triggering validation
+        setTimeout(() => {
+          clearErrors();
+        }, 0);
+
+        if (onSuccess) onSuccess();
       } catch (error: any) {
         console.error('Form submission error:', error);
         let errorMessage = 'Form submission failed. Please try again.';

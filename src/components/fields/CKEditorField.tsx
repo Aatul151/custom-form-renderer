@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Controller } from 'react-hook-form';
+import { Controller, useWatch } from 'react-hook-form';
 import { Box, FormHelperText, useTheme, alpha, FormLabel } from '@mui/material';
 import { useFormColors } from '../../utils/useFormColors';
 import { CKEditor } from '@ckeditor/ckeditor5-react';
@@ -20,10 +20,12 @@ export const CKEditorField = ({ field, control, defaultValue, rules, errors, set
   const theme = useTheme();
   const formColors = useFormColors(colors);
   const editorContainerRef = useRef<HTMLDivElement>(null);
+  const editorInstanceRef = useRef<any>(null);
+  const isUserTypingRef = useRef<boolean>(false);
   
   const fileUploadService = services?.fileUpload || defaultFileUploadService;
   const fileBaseUrl = services?.fileBaseUrl || '';
-  const licenseKey = services?.ckEditorLicenseKey || '';
+  const licenseKey = services?.ckEditorLicenseKey || 'GPL';
   const ckEditorScriptPath = services?.ckEditorScriptPath || '/lib/ckeditor/ckeditor.js';
 
   // Use CKEditor hook to load and check availability
@@ -31,6 +33,29 @@ export const CKEditorField = ({ field, control, defaultValue, rules, errors, set
     scriptPath: ckEditorScriptPath,
     autoLoad: true,
   });
+
+  // Watch the field value to sync CKEditor when form resets
+  const watchedValue = useWatch({
+    control,
+    name: field.name,
+    defaultValue: defaultValue || '',
+  });
+
+  // Sync CKEditor content when watched value changes externally (e.g., after form reset)
+  // Skip sync if the change came from user typing (handled by onChange)
+  useEffect(() => {
+    if (editorInstanceRef.current && isCKEditorReady && !isUserTypingRef.current) {
+      const currentEditorData = editorInstanceRef.current.getData();
+      const formValue = watchedValue || '';
+      
+      // Only update if the values differ (handles form reset scenarios)
+      if (currentEditorData !== formValue) {
+        editorInstanceRef.current.setData(formValue);
+      }
+    }
+    // Reset the typing flag after sync check
+    isUserTypingRef.current = false;
+  }, [watchedValue, isCKEditorReady]);
 
   // Custom upload adapter that uses fileUploadService
   const createCustomUploadAdapter = useCallback((loader: any) => {
@@ -174,6 +199,8 @@ export const CKEditorField = ({ field, control, defaultValue, rules, errors, set
                 } as any}
                 data={formField.value || ''}
                 onReady={(editor) => {
+                  editorInstanceRef.current = editor;
+                  
                   // Set up custom upload adapter via FileRepository
                   if (formSchema?.name) {
                     try {
@@ -200,6 +227,7 @@ export const CKEditorField = ({ field, control, defaultValue, rules, errors, set
                 }}
                 onChange={(_event, editor) => {
                   const data = editor.getData();
+                  isUserTypingRef.current = true; // Mark that user is typing
                   formField.onChange(data);
                 }}
                 onBlur={() => {
