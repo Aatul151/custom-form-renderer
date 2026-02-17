@@ -1,10 +1,23 @@
 {
   "name": "@aatulwork/customform-renderer",
-  "version": "1.2.0",
+  "version": "1.5.0",
   "description": "A powerful, reusable form renderer component for React with Material-UI support",
   "main": "dist/index.js",
-  "module": "dist/index.esm.js",
+  "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./lib/ckeditor/ckeditor.js": "./lib/ckeditor/ckeditor.js",
+    "./vite": {
+      "types": "./dist/vite-plugin.d.ts",
+      "import": "./dist/vite-plugin.mjs",
+      "require": "./dist/vite-plugin.js"
+    }
+  },
   "files": [
     "dist",
     "lib",
@@ -38,10 +51,21 @@
     "material-ui",
     "react-hook-form",
     "dynamic-forms",
-    "form-builder"
+    "form-builder",
+    "json-schema",
+    "dynamic-form",
+    "mui"
   ],
   "author": "aatulwork",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aatulwork/custom-form-renderer"
+  },
+  "homepage": "https://github.com/aatulwork/custom-form-renderer#readme",
+  "bugs": {
+    "url": "https://github.com/aatulwork/custom-form-renderer/issues"
+  },
   "peerDependencies": {
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
@@ -53,14 +77,19 @@
     "dayjs": "^1.11.0",
     "@ckeditor/ckeditor5-react": "^11.0.0"
   },
+  "optionalPeerDependencies": {
+    "vite": ">=4.0.0"
+  },
   "dependencies": {
     "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.1"
+    "@emotion/styled": "^11.14.1",
+    "@mui/system": "^6.0.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "typescript": "^5.2.0",
-    "tsup": "^8.0.0"
+    "tsup": "^8.0.0",
+    "vite": "^5.0.0"
   }
 }

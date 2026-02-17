@@ -1,4 +1,4 @@
-# @custom-form/renderer
+# @aatulwork/customform-renderer
 
 A powerful, reusable form renderer component for React with Material-UI support. This package provides a dynamic form rendering system that can generate forms from JSON schemas with support for multiple field types, validation, file uploads, and more.
 
@@ -16,7 +16,7 @@ A powerful, reusable form renderer component for React with Material-UI support.
 ## Installation
 
 ```bash
-npm install @custom-form/renderer
+npm install @aatulwork/customform-renderer
 ```
 
 ### Peer Dependencies
@@ -27,9 +27,11 @@ Make sure you have these peer dependencies installed:
 npm install react react-dom @mui/material @mui/icons-material @mui/x-date-pickers react-hook-form @tanstack/react-query dayjs @ckeditor/ckeditor5-react
 ```
 
+Peer versions: React ^18, MUI ^6, @mui/x-date-pickers ^7, react-hook-form ^7, @tanstack/react-query ^5, dayjs ^1.11, @ckeditor/ckeditor5-react ^11.
+
 ### CKEditor Setup
 
-The package includes CKEditor in the `lib/ckeditor/` directory. You need to load it before using CKEditor fields.
+The package includes CKEditor in the `lib/ckeditor/` directory. You need to load it before using CKEditor fields. **If the CKEditor field shows "CKEditor failed to load" or stays on "Loading editor...",** the script URL is not reachable—copy `lib/ckeditor/ckeditor.js` to your app’s `public/lib/ckeditor/` or set `services.ckEditorScriptPath`. See [CKEDITOR_SETUP.md](./CKEDITOR_SETUP.md) for details and troubleshooting.
 
 **Option 1: Include in HTML (Recommended)**
 ```html
@@ -38,23 +40,56 @@ The package includes CKEditor in the `lib/ckeditor/` directory. You need to load
 
 **Option 2: Copy to your public directory**
 ```bash
-cp node_modules/@custom-form/renderer/lib/ckeditor/ckeditor.js public/lib/ckeditor/
+cp node_modules/@aatulwork/customform-renderer/lib/ckeditor/ckeditor.js public/lib/ckeditor/
 ```
 
 **Option 3: Use dynamic loading**
 ```tsx
-import { useCKEditor } from '@custom-form/renderer';
+import { useCKEditor } from '@aatulwork/customform-renderer';
 
 const { isReady } = useCKEditor({ autoLoad: true });
 ```
 
 See [CKEditor Setup Guide](#ckeditor-setup) for more details.
 
+### Using with Vite
+
+**You do not need any Vite config** to use this package. The package ships correct `module` and `exports` so Vite resolves it without aliases.
+
+- **Dependencies:** The package installs `@emotion/react`, `@emotion/styled`, and `@mui/system`; you only need to install the [peer dependencies](#peer-dependencies) (React, MUI, react-hook-form, etc.).
+
+If you use **SSR** or see module resolution / pre-bundling issues, add the optional plugin (one line):
+
+```ts
+// vite.config.ts
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import { customformRendererVite } from '@aatulwork/customform-renderer/vite';
+
+export default defineConfig({
+  plugins: [react(), customformRendererVite()],
+});
+```
+
+The plugin applies `optimizeDeps.include`, `ssr.noExternal`, and excludes the package’s CKEditor script from pre-bundling. You can pass options: `customformRendererVite({ excludeCkeditorFromOptimize: false })` if you load CKEditor only via a script tag.
+
+## Package Exports
+
+The package exports the following:
+
+- **Components:** `FormRenderer`, `FieldRenderer`, `FormViewMode`, `FieldView`
+- **Field components:** `TextField`, `SelectField`, `CheckboxField`, `RadioField`, `ToggleField`, `ColorField`, `DateTimePickerField`, `CKEditorField`, `FileField`, `FormReferenceField`, `ApiReferenceField`
+- **Common:** `SimpleSelect` (and types `SimpleSelectProps`, `SimpleSelectOption`)
+- **Types:** `FormSchema`, `FormField`, `FormSection`, `FormRendererProps`, `FieldRendererProps`, `FormServices`, `FileUploadService`, `FormReferenceService`, `ApiReferenceService`, `DateFormatterService`, `OptionItem`, `FieldType`, `FieldValidation`, `UploadedFile`, `FormColors`
+- **Utils:** `getAllFields`, `normalizeInitialValues`, `transformFormValues`, `getDefaultValue`, `formatFileSize`, `validateFile`, `buildFieldRules`, `normalizeOptions`
+- **CKEditor:** `loadCKEditor`, `isCKEditorAvailable`, `waitForCKEditor`, `useCKEditor`
+- **Default services:** `defaultFileUploadService`, `defaultFormReferenceService`, `defaultApiReferenceService`, `defaultDateFormatterService` (throw if used without override; provide your own via `services`)
+- **Vite:** `customformRendererVite` from `@aatulwork/customform-renderer/vite` (optional plugin for SSR / optimizeDeps)
+
 ## Quick Start
 
 ```tsx
-import { FormRenderer } from '@custom-form/renderer';
-import { FormSchema } from '@custom-form/renderer';
+import { FormRenderer, FormSchema } from '@aatulwork/customform-renderer';
 
 const formSchema: FormSchema = {
   title: 'User Registration',
@@ -103,14 +138,22 @@ function App() {
 
 ```typescript
 interface FormSchema {
+  _id?: string;
+  id?: string;        // Legacy support
   title: string;
-  name: string; // Unique identifier
+  name: string;       // Unique identifier (lowercase)
+  module?: string | null;
+  formType?: 'system' | 'custom';
+  collectionName?: string;
   sections?: FormSection[];
   fields?: FormField[]; // Legacy support
   settings?: {
     sectionDisplayMode?: 'panel' | 'stepper';
-    fieldsPerRow?: 1 | 2 | 3;
+    fieldsPerRow?: number; // 1, 2, or 3
+    [key: string]: any;
   };
+  createdAt?: string;
+  updatedAt?: string;
 }
 ```
 
@@ -129,24 +172,32 @@ interface FormSection {
 
 ```typescript
 interface FormField {
-  type: 'text' | 'email' | 'number' | 'select' | 'checkbox' | 'radio' | 
-        'datepicker' | 'file' | 'ckeditor' | 'toggle' | 'color' | 
+  type: 'text' | 'email' | 'number' | 'select' | 'checkbox' | 'radio' |
+        'datepicker' | 'file' | 'ckeditor' | 'toggle' | 'color' |
         'formReference' | 'apiReference';
   name: string;
   label: string;
   required?: boolean;
   placeholder?: string;
+  allowFilter?: boolean;
   options?: OptionItem[] | string[]; // For select/radio
   validation?: {
     min?: number;
     max?: number;
     pattern?: string;
-    maxFileSize?: number; // For file fields
+    maxFileSize?: number;   // For file fields (bytes)
     allowedFileTypes?: string[]; // For file fields
   };
-  allowMultiple?: boolean; // For select/file fields
+  // Reference fields
+  referenceFormName?: string;
+  referenceFieldName?: string;
+  apiEndpoint?: string;
+  referenceModel?: string;
+  apiLabelField?: string;
+  apiValueField?: string;
+  allowMultiple?: boolean;  // For select/file fields
   datePickerMode?: 'date' | 'datetime' | 'time'; // For datepicker
-  // ... other field-specific properties
+  displayTime?: boolean;   // @deprecated Use datePickerMode instead
 }
 ```
 
@@ -186,6 +237,8 @@ interface FormField {
 ```
 
 ### Date Picker
+
+Field type is `datepicker`; the exported component is `DateTimePickerField`.
 
 ```typescript
 {
@@ -249,7 +302,7 @@ Form Reference fields fetch options from entries of another form in your system.
 You must provide a `formReference` service that fetches options from your form entries:
 
 ```tsx
-import { FormRenderer, FormServices } from '@custom-form/renderer';
+import { FormRenderer, FormServices } from '@aatulwork/customform-renderer';
 
 const services: FormServices = {
   formReference: {
@@ -277,7 +330,7 @@ const services: FormServices = {
 **Example: Complete Form Reference Setup**
 
 ```tsx
-import { FormRenderer, FormServices, FormSchema } from '@custom-form/renderer';
+import { FormRenderer, FormServices, FormSchema } from '@aatulwork/customform-renderer';
 
 // Define your form schema with formReference field
 const formSchema: FormSchema = {
@@ -379,7 +432,7 @@ API Reference fields fetch options from any external API endpoint. This is usefu
 You must provide an `apiReference` service that fetches options from your API:
 
 ```tsx
-import { FormRenderer, FormServices } from '@custom-form/renderer';
+import { FormRenderer, FormServices } from '@aatulwork/customform-renderer';
 
 const services: FormServices = {
   apiReference: {
@@ -408,7 +461,7 @@ const services: FormServices = {
 **Example: Complete API Reference Setup**
 
 ```tsx
-import { FormRenderer, FormServices, FormSchema } from '@custom-form/renderer';
+import { FormRenderer, FormServices, FormSchema } from '@aatulwork/customform-renderer';
 
 // Define your form schema with apiReference field
 const formSchema: FormSchema = {
@@ -600,7 +653,7 @@ The package uses a service injection pattern to handle external dependencies. Yo
 ### Providing Services
 
 ```tsx
-import { FormRenderer, FormServices } from '@custom-form/renderer';
+import { FormRenderer, FormServices } from '@aatulwork/customform-renderer';
 
 const services: FormServices = {
   // File upload service
@@ -685,7 +738,11 @@ interface FormRendererProps {
   allowResetOnValuesChange?: boolean;
   mode?: 'edit' | 'view';
   services?: FormServices;
+  colors?: FormColors;  // Override theme colors (primary, secondary, error, etc.)
 }
+
+// FormColors: primary?, secondary?, error?, success?, warning?, info?,
+// textPrimary?, textSecondary?, divider?, background?, backgroundPaper?
 ```
 
 ## View Mode
@@ -921,7 +978,7 @@ If using Vite, Create React App, or similar:
 
 ```bash
 # Copy CKEditor to your public directory
-cp node_modules/@custom-form/renderer/lib/ckeditor/ckeditor.js public/lib/ckeditor/ckeditor.js
+cp node_modules/@aatulwork/customform-renderer/lib/ckeditor/ckeditor.js public/lib/ckeditor/ckeditor.js
 ```
 
 Then include in HTML:
@@ -934,7 +991,7 @@ Then include in HTML:
 Use the provided hook to load CKEditor dynamically:
 
 ```tsx
-import { useCKEditor } from '@custom-form/renderer';
+import { useCKEditor } from '@aatulwork/customform-renderer';
 
 function App() {
   const { isReady, isLoading, error } = useCKEditor({
@@ -968,12 +1025,12 @@ const services: FormServices = {
 ### CKEditor Utilities
 
 ```tsx
-import { 
-  loadCKEditor, 
-  isCKEditorAvailable, 
+import {
+  loadCKEditor,
+  isCKEditorAvailable,
   waitForCKEditor,
-  useCKEditor 
-} from '@custom-form/renderer';
+  useCKEditor,
+} from '@aatulwork/customform-renderer';
 
 // Check if available
 if (isCKEditorAvailable()) {

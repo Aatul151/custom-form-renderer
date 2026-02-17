@@ -53,13 +53,23 @@ export const loadCKEditor = (scriptPath: string = '/lib/ckeditor/ckeditor.js'): 
       setTimeout(() => {
         clearInterval(checkInterval);
         if (!window.ClassicEditor) {
-          reject(new Error('CKEditor script loaded but ClassicEditor not found on window after 10 seconds'));
+          reject(
+            new Error(
+              'CKEditor script loaded but ClassicEditor was not found on window. ' +
+                'Ensure you are using the package-provided build from lib/ckeditor/ckeditor.js (see CKEDITOR_SETUP.md).'
+            )
+          );
         }
       }, 10000);
     };
 
     script.onerror = () => {
-      reject(new Error(`Failed to load CKEditor from ${scriptPath}`));
+      reject(
+        new Error(
+          `Failed to load CKEditor from ${scriptPath}. ` +
+            'Ensure the file exists at that URL (e.g. copy from node_modules/@aatulwork/customform-renderer/lib/ckeditor/ckeditor.js to public/lib/ckeditor/ckeditor.js) or set services.ckEditorScriptPath to a working URL.'
+        )
+      );
     };
 
     document.head.appendChild(script);

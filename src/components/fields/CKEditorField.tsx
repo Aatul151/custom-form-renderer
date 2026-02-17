@@ -95,15 +95,16 @@ export const CKEditorField = ({ field, control, defaultValue, rules, errors, set
   }
 
   if (ckEditorError || !isCKEditorReady) {
+    const message =
+      ckEditorError?.message ||
+      `CKEditor failed to load. Script path: ${ckEditorScriptPath}. Copy ckeditor.js to public/lib/ckeditor/ or set services.ckEditorScriptPath. See CKEDITOR_SETUP.md.`;
     return (
       <Box>
         <FormLabel required={field.required} error={!!errors[field.name]}>
           {field.label}
         </FormLabel>
         <Box sx={{ p: 2, border: '1px solid', borderColor: formColors.error, borderRadius: 1 }}>
-          <FormHelperText error>
-            {ckEditorError?.message || 'CKEditor failed to load. Please ensure the CKEditor script is loaded.'}
-          </FormHelperText>
+          <FormHelperText error>{message}</FormHelperText>
         </Box>
       </Box>
     );
