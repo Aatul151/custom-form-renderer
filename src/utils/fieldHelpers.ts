@@ -1,5 +1,23 @@
 import { FormField } from '../types';
 
+/** MIME types that indicate executable/script content - reject when expecting documents/images */
+const DANGEROUS_MIME_PREFIXES = [
+  'application/x-msdownload',
+  'application/x-msdos-program',
+  'application/x-executable',
+  'application/x-sh',
+  'application/x-bat',
+  'application/vnd.microsoft.portable-executable',
+  'application/x-mach-binary',
+];
+
+/** Extensions that suggest document/image content (for MIME mismatch detection) */
+const DOCUMENT_IMAGE_EXTENSIONS = new Set([
+  'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx',
+  'jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg', 'ico',
+  'txt', 'csv', 'rtf', 'odt', 'ods', 'odp',
+]);
+
 /**
  * Format file size in human-readable format
  */
@@ -12,15 +30,33 @@ export const formatFileSize = (bytes: number): string => {
 };
 
 /**
- * Validate file based on field configuration
+ * Validate file based on field configuration.
+ * Note: Server-side validation (MIME, magic bytes) is required for security.
  */
 export const validateFile = (file: File, field: FormField): string | true => {
-  // Check file type
+  // Check file type by extension
   if (field.validation?.allowedFileTypes && field.validation.allowedFileTypes.length > 0) {
-    const fileExtension = file.name.split('.').pop()?.toLowerCase();
+    const parts = file.name.split('.');
+    const fileExtension = parts.pop()?.toLowerCase();
     const allowedTypes = field.validation.allowedFileTypes.map(t => t.toLowerCase().replace('.', ''));
     if (!fileExtension || !allowedTypes.includes(fileExtension)) {
       return `File type not allowed. Allowed types: ${field.validation.allowedFileTypes.join(', ')}`;
+    }
+
+    // Defense in depth: reject if extension suggests document/image but MIME indicates executable
+    const extSuggestsDocument = DOCUMENT_IMAGE_EXTENSIONS.has(fileExtension);
+    const mimeIsDangerous = file.type && DANGEROUS_MIME_PREFIXES.some(p => file.type.startsWith(p));
+    if (extSuggestsDocument && mimeIsDangerous) {
+      return `File type not allowed. File content does not match extension.`;
+    }
+
+    // Reject double-extension bypass: e.g. "file.exe.pdf" when only pdf allowed
+    const DANGEROUS_EXTENSIONS = new Set(['exe', 'bat', 'cmd', 'sh', 'ps1', 'msi', 'com']);
+    if (parts.length >= 2) {
+      const primaryExt = parts[parts.length - 1]?.toLowerCase();
+      if (primaryExt && DANGEROUS_EXTENSIONS.has(primaryExt)) {
+        return `File type not allowed. Allowed types: ${field.validation.allowedFileTypes.join(', ')}`;
+      }
     }
   }
 

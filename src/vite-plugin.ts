@@ -68,5 +68,3 @@ export function customformRendererVite(options: CustomFormRendererVitePluginOpti
     },
   };
 }
-
-export default customformRendererVite;

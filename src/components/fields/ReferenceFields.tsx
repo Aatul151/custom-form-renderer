@@ -8,6 +8,12 @@ import {
   defaultFormReferenceService,
   defaultApiReferenceService,
 } from '../../services/defaultServices';
+import {
+  getCachedOptions,
+  setCachedOptions,
+  getFormReferenceCacheKey,
+  getApiReferenceCacheKey,
+} from '../../utils/referenceOptionsCache';
 
 export const FormReferenceField = ({ field, control, defaultValue, rules, errors, services }: FieldRendererProps) => {
   const isMultiple = field.allowMultiple || false;
@@ -16,12 +22,21 @@ export const FormReferenceField = ({ field, control, defaultValue, rules, errors
 
   const formReferenceService = services?.formReference || defaultFormReferenceService;
 
-  const fetchOptions = useCallback(() => {
+  const fetchOptions = useCallback((forceRefresh = false) => {
     if (!field.referenceFormName || !field.referenceFieldName) return;
+    const cacheKey = getFormReferenceCacheKey(field.referenceFormName, field.referenceFieldName);
+    if (!forceRefresh) {
+      const cached = getCachedOptions(cacheKey);
+      if (cached) {
+        setOptions(cached);
+        return;
+      }
+    }
     setIsLoading(true);
     formReferenceService
       .fetchOptions(field.referenceFormName, field.referenceFieldName)
       .then((opts: OptionItem[]) => {
+        setCachedOptions(cacheKey, opts);
         setOptions(opts);
       })
       .catch((error: any) => {
@@ -75,7 +90,7 @@ export const FormReferenceField = ({ field, control, defaultValue, rules, errors
             multiple={isMultiple}
             isLoading={isLoading}
             refreshable={true}
-            onRefresh={fetchOptions}
+            onRefresh={() => fetchOptions(true)}
           />
         );
       }}
@@ -90,12 +105,22 @@ export const ApiReferenceField = ({ field, control, defaultValue, rules, errors,
 
   const apiReferenceService = services?.apiReference || defaultApiReferenceService;
 
-  const fetchOptions = useCallback(() => {
+  const fetchOptions = useCallback((forceRefresh = false) => {
     if (!field.apiEndpoint || !field.apiLabelField) return;
+    const valueField = field.apiValueField || '_id';
+    const cacheKey = getApiReferenceCacheKey(field.apiEndpoint, field.apiLabelField, valueField);
+    if (!forceRefresh) {
+      const cached = getCachedOptions(cacheKey);
+      if (cached) {
+        setOptions(cached);
+        return;
+      }
+    }
     setIsLoading(true);
     apiReferenceService
-      .fetchOptions(field.apiEndpoint, field.apiLabelField, field.apiValueField || '_id')
+      .fetchOptions(field.apiEndpoint, field.apiLabelField, valueField)
       .then((opts: OptionItem[]) => {
+        setCachedOptions(cacheKey, opts);
         setOptions(opts);
       })
       .catch((error: any) => {
@@ -149,7 +174,7 @@ export const ApiReferenceField = ({ field, control, defaultValue, rules, errors,
             multiple={isMultiple}
             isLoading={isLoading}
             refreshable={true}
-            onRefresh={fetchOptions}
+            onRefresh={() => fetchOptions(true)}
           />
         );
       }}

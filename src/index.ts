@@ -57,6 +57,15 @@ export {
   normalizeOptions,
 } from './utils/fieldHelpers';
 
+export { sanitizeHtml } from './utils/sanitizeHtml';
+export { isValidCssColor, getSafeCssColor } from './utils/isValidCssColor';
+export {
+  getCachedOptions,
+  setCachedOptions,
+  getFormReferenceCacheKey,
+  getApiReferenceCacheKey,
+} from './utils/referenceOptionsCache';
+
 // CKEditor utilities
 export {
   loadCKEditor,

@@ -4,27 +4,14 @@ import { FormField, OptionItem, FormServices, FormColors } from '../../types';
 import { normalizeOptions } from '../../utils/fieldHelpers';
 import { defaultDateFormatterService, defaultFormReferenceService, defaultApiReferenceService } from '../../services/defaultServices';
 import { useFormColors } from '../../utils/useFormColors';
-
-/** In-memory cache for reference field options to reduce API calls (TTL: 5 min) */
-const REFERENCE_OPTIONS_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-const referenceOptionsCache = new Map<
-  string,
-  { options: OptionItem[]; timestamp: number }
->();
-
-const getCachedOptions = (key: string): OptionItem[] | null => {
-  const cached = referenceOptionsCache.get(key);
-  if (!cached) return null;
-  if (Date.now() - cached.timestamp > REFERENCE_OPTIONS_CACHE_TTL) {
-    referenceOptionsCache.delete(key);
-    return null;
-  }
-  return cached.options;
-};
-
-const setCachedOptions = (key: string, options: OptionItem[]) => {
-  referenceOptionsCache.set(key, { options, timestamp: Date.now() });
-};
+import { sanitizeHtml } from '../../utils/sanitizeHtml';
+import { getSafeCssColor } from '../../utils/isValidCssColor';
+import {
+  getCachedOptions,
+  setCachedOptions,
+  getFormReferenceCacheKey,
+  getApiReferenceCacheKey,
+} from '../../utils/referenceOptionsCache';
 
 interface FieldViewProps {
   field: FormField;
@@ -100,7 +87,7 @@ export const FieldView = ({ field, value, services }: FieldViewProps) => {
 
   // Special handling for color fields - display 30x30 color box
   if (field.type === 'color') {
-    const colorValue = value && typeof value === 'string' ? value : '#000000';
+    const colorValue = getSafeCssColor(value && typeof value === 'string' ? value : undefined, '#000000');
     return (
       <Box
         key={field.name}
@@ -186,7 +173,7 @@ export const FieldView = ({ field, value, services }: FieldViewProps) => {
             color: fieldValueColor,
             fontStyle: formattedValue === '—' ? 'italic' : 'normal',
           }}
-          dangerouslySetInnerHTML={{ __html: value || '' }}
+          dangerouslySetInnerHTML={{ __html: sanitizeHtml(value || '') }}
         />
       </Box>
     );
@@ -263,7 +250,7 @@ const ReferenceFieldView = ({
         let options: OptionItem[] | null = null;
 
         if (field.type === 'formReference' && field.referenceFormName && field.referenceFieldName) {
-          cacheKey = `formRef:${field.referenceFormName}:${field.referenceFieldName}`;
+          cacheKey = getFormReferenceCacheKey(field.referenceFormName, field.referenceFieldName);
           options = getCachedOptions(cacheKey);
           if (!options) {
             const formRefService = services?.formReference || defaultFormReferenceService;
@@ -272,7 +259,7 @@ const ReferenceFieldView = ({
           }
         } else if (field.type === 'apiReference' && field.apiEndpoint && field.apiLabelField) {
           const valueField = field.apiValueField || '_id';
-          cacheKey = `apiRef:${field.apiEndpoint}:${field.apiLabelField}:${valueField}`;
+          cacheKey = getApiReferenceCacheKey(field.apiEndpoint, field.apiLabelField, valueField);
           options = getCachedOptions(cacheKey);
           if (!options) {
             const apiRefService = services?.apiReference || defaultApiReferenceService;
