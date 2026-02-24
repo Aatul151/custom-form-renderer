@@ -1,8 +1,30 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Typography } from '@mui/material';
-import { FormField, OptionItem, FormServices } from '../../types';
+import { FormField, OptionItem, FormServices, FormColors } from '../../types';
 import { normalizeOptions } from '../../utils/fieldHelpers';
-import { defaultDateFormatterService } from '../../services/defaultServices';
+import { defaultDateFormatterService, defaultFormReferenceService, defaultApiReferenceService } from '../../services/defaultServices';
+import { useFormColors } from '../../utils/useFormColors';
+
+/** In-memory cache for reference field options to reduce API calls (TTL: 5 min) */
+const REFERENCE_OPTIONS_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const referenceOptionsCache = new Map<
+  string,
+  { options: OptionItem[]; timestamp: number }
+>();
+
+const getCachedOptions = (key: string): OptionItem[] | null => {
+  const cached = referenceOptionsCache.get(key);
+  if (!cached) return null;
+  if (Date.now() - cached.timestamp > REFERENCE_OPTIONS_CACHE_TTL) {
+    referenceOptionsCache.delete(key);
+    return null;
+  }
+  return cached.options;
+};
+
+const setCachedOptions = (key: string, options: OptionItem[]) => {
+  referenceOptionsCache.set(key, { options, timestamp: Date.now() });
+};
 
 interface FieldViewProps {
   field: FormField;
@@ -11,11 +33,11 @@ interface FieldViewProps {
 }
 
 export const FieldView = ({ field, value, services }: FieldViewProps) => {
+  const fieldLabelColor = "text.secondary";
+  const fieldValueColor = "text.primary";
   const dateFormatter = services?.dateFormatter || defaultDateFormatterService;
   const FileDisplayComponent = services?.FileDisplayComponent;
   const CKEditorDisplayComponent = services?.CKEditorDisplayComponent;
-
-  // Format field value
   const formattedValue = formatFieldValue(field, value, dateFormatter, services);
 
   // Special handling for file fields
@@ -33,7 +55,7 @@ export const FieldView = ({ field, value, services }: FieldViewProps) => {
             borderColor: 'divider',
           }}
         >
-          <Typography variant="body2" sx={{ fontWeight: 500 }}>
+          <Typography variant="body2" sx={{ fontWeight: 500, color: fieldLabelColor }}>
             {field.label}
           </Typography>
           <FileDisplayComponent fieldValue={value} />
@@ -53,12 +75,65 @@ export const FieldView = ({ field, value, services }: FieldViewProps) => {
           borderColor: 'divider',
         }}
       >
-        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+        <Typography variant="body2" sx={{ fontWeight: 500, color: fieldLabelColor }}>
           {field.label}
         </Typography>
-        <Typography variant="body1" sx={{ color: 'text.secondary' }}>
+        <Typography variant="body1" sx={{ color: fieldValueColor }}>
           {value ? (Array.isArray(value) ? `${value.length} file(s)` : '1 file') : '—'}
         </Typography>
+      </Box>
+    );
+  }
+
+  // Special handling for formReference and apiReference - fetch labels async
+  if (field.type === 'formReference' || field.type === 'apiReference') {
+    return (
+      <ReferenceFieldView
+        field={field}
+        value={value}
+        services={services}
+        fieldLabelColor={fieldLabelColor}
+        fieldValueColor={fieldValueColor}
+      />
+    );
+  }
+
+  // Special handling for color fields - display 30x30 color box
+  if (field.type === 'color') {
+    const colorValue = value && typeof value === 'string' ? value : '#000000';
+    return (
+      <Box
+        key={field.name}
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 0.5,
+          py: 1.5,
+          px: 1,
+          borderColor: 'divider',
+        }}
+      >
+        <Typography variant="body2" sx={{ fontWeight: 500, color: fieldLabelColor }}>
+          {field.label}
+        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          {value ? (
+            <Box
+              sx={{
+                width: 30,
+                height: 30,
+                backgroundColor: colorValue,
+                border: '1px solid',
+                borderColor: 'divider',
+                borderRadius: 1,
+              }}
+            />
+          ) : (
+            <Typography variant="body1" sx={{ color: fieldValueColor, fontStyle: 'italic' }}>
+              —
+            </Typography>
+          )}
+        </Box>
       </Box>
     );
   }
@@ -78,10 +153,10 @@ export const FieldView = ({ field, value, services }: FieldViewProps) => {
             borderColor: 'divider',
           }}
         >
-          <Typography variant="body2" sx={{ fontWeight: 500 }}>
-            {field.label}
-          </Typography>
-          <CKEditorDisplayComponent
+        <Typography variant="body2" sx={{ fontWeight: 500, color: fieldLabelColor }}>
+          {field.label}
+        </Typography>
+        <CKEditorDisplayComponent
             content={value || ''}
             maxLength={150}
             showViewButton={true}
@@ -102,13 +177,13 @@ export const FieldView = ({ field, value, services }: FieldViewProps) => {
           borderColor: 'divider',
         }}
       >
-        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+        <Typography variant="body2" sx={{ fontWeight: 500, color: fieldLabelColor }}>
           {field.label}
         </Typography>
         <Typography
           variant="body1"
           sx={{
-            color: formattedValue === '—' ? 'text.disabled' : 'text.primary',
+            color: fieldValueColor,
             fontStyle: formattedValue === '—' ? 'italic' : 'normal',
           }}
           dangerouslySetInnerHTML={{ __html: value || '' }}
@@ -129,13 +204,13 @@ export const FieldView = ({ field, value, services }: FieldViewProps) => {
         borderColor: 'divider',
       }}
     >
-      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+      <Typography variant="body2" sx={{ fontWeight: 500, color: fieldLabelColor }}>
         {field.label}
       </Typography>
       <Typography
         variant="body1"
         sx={{
-          color: formattedValue === '—' ? 'text.disabled' : 'text.primary',
+          color: fieldValueColor,
           fontStyle: formattedValue === '—' ? 'italic' : 'normal',
           fontWeight: 400,
           fontSize: '0.875rem',
@@ -143,6 +218,115 @@ export const FieldView = ({ field, value, services }: FieldViewProps) => {
         }}
       >
         {formattedValue}
+      </Typography>
+    </Box>
+  );
+};
+
+/** Fetches and displays labels for formReference and apiReference fields */
+const ReferenceFieldView = ({
+  field,
+  value,
+  services,
+  fieldLabelColor,
+  fieldValueColor,
+}: {
+  field: FormField;
+  value: any;
+  services?: FormServices;
+  fieldLabelColor: string;
+  fieldValueColor: string;
+}) => {
+  const [displayLabels, setDisplayLabels] = useState<string[] | null>(null);
+
+  useEffect(() => {
+    if (value === null || value === undefined || value === '') {
+      setDisplayLabels([]);
+      return;
+    }
+
+    let values: any[];
+    if (field.allowMultiple) {
+      values = Array.isArray(value) ? value : (value ? [value] : []);
+    } else {
+      values = Array.isArray(value) && value.length > 0 ? [value[0]] : value ? [value] : [];
+    }
+
+    if (values.length === 0) {
+      setDisplayLabels([]);
+      return;
+    }
+
+    const fetchLabels = async () => {
+      try {
+        let cacheKey: string | null = null;
+        let options: OptionItem[] | null = null;
+
+        if (field.type === 'formReference' && field.referenceFormName && field.referenceFieldName) {
+          cacheKey = `formRef:${field.referenceFormName}:${field.referenceFieldName}`;
+          options = getCachedOptions(cacheKey);
+          if (!options) {
+            const formRefService = services?.formReference || defaultFormReferenceService;
+            options = await formRefService.fetchOptions(field.referenceFormName, field.referenceFieldName);
+            setCachedOptions(cacheKey, options);
+          }
+        } else if (field.type === 'apiReference' && field.apiEndpoint && field.apiLabelField) {
+          const valueField = field.apiValueField || '_id';
+          cacheKey = `apiRef:${field.apiEndpoint}:${field.apiLabelField}:${valueField}`;
+          options = getCachedOptions(cacheKey);
+          if (!options) {
+            const apiRefService = services?.apiReference || defaultApiReferenceService;
+            options = await apiRefService.fetchOptions(field.apiEndpoint, field.apiLabelField, valueField);
+            setCachedOptions(cacheKey, options);
+          }
+        }
+
+        const labels = values.map((val: any) => {
+          const option = (options || []).find((opt) => opt.value === val || String(opt.value) === String(val));
+          return option ? option.label : String(val);
+        });
+        setDisplayLabels(labels);
+      } catch {
+        setDisplayLabels(values.map((v: any) => String(v)));
+      }
+    };
+
+    fetchLabels();
+  }, [field, value, services]);
+
+  const displayText =
+    displayLabels === null
+      ? '...'
+      : displayLabels.length === 0
+        ? '—'
+        : displayLabels.join(', ');
+
+  return (
+    <Box
+      key={field.name}
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 0.5,
+        py: 1.5,
+        px: 1,
+        borderColor: 'divider',
+      }}
+    >
+      <Typography variant="body2" sx={{ fontWeight: 500, color: fieldLabelColor }}>
+        {field.label}
+      </Typography>
+      <Typography
+        variant="body1"
+        sx={{
+          color: fieldValueColor,
+          fontStyle: displayText === '—' ? 'italic' : 'normal',
+          fontWeight: 400,
+          fontSize: '0.875rem',
+          lineHeight: 1.5,
+        }}
+      >
+        {displayText}
       </Typography>
     </Box>
   );
@@ -167,8 +351,6 @@ const formatFieldValue = (
       return dateFormatter?.format(value, { datePickerMode: field.datePickerMode }) || String(value);
 
     case 'select':
-    case 'formReference':
-    case 'apiReference':
       let values: any[];
       if (field.allowMultiple) {
         values = Array.isArray(value) ? value : (value ? [value] : []);
@@ -194,9 +376,6 @@ const formatFieldValue = (
             return option.label;
           }
         }
-        // For reference fields, we can't resolve labels in view mode without services
-        // This would require query client access which we don't have in view mode
-        // Users should provide a custom FieldView component if they need this
         return String(val);
       };
 
@@ -206,6 +385,9 @@ const formatFieldValue = (
       }
 
       return getLabelForValue(values[0]);
+
+    case 'color':
+      return value ? String(value) : '—';
 
     case 'radio':
       if (field.options) {

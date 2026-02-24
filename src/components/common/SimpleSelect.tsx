@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState, useId } from 'react';
 import {
   FormControl,
-  InputLabel,
+  FormLabel,
   Select as MuiSelect,
   MenuItem,
   FormHelperText,
@@ -9,7 +9,12 @@ import {
   Box,
   OutlinedInput,
   CircularProgress,
+  TextField,
+  ListSubheader,
+  InputAdornment,
+  IconButton,
 } from '@mui/material';
+import RefreshIcon from '@mui/icons-material/Refresh';
 
 export interface SimpleSelectOption {
   value: string | number;
@@ -30,6 +35,10 @@ export interface SimpleSelectProps {
   disabled?: boolean;
   multiple?: boolean;
   isLoading?: boolean;
+  filterable?: boolean;
+  filterPlaceholder?: string;
+  refreshable?: boolean;
+  onRefresh?: () => void;
 }
 
 export const SimpleSelect: React.FC<SimpleSelectProps> = ({
@@ -46,22 +55,75 @@ export const SimpleSelect: React.FC<SimpleSelectProps> = ({
   disabled = false,
   multiple = false,
   isLoading = false,
+  filterable = true,
+  filterPlaceholder = 'Filter...',
+  refreshable = false,
+  onRefresh,
 }) => {
+  const [filterText, setFilterText] = useState('');
+  const selectId = useId();
+
   const handleChange = (event: any) => {
     const val = event.target.value;
     onChange(val);
   };
 
+  const filteredOptions =
+    filterable && filterText
+      ? options.filter((opt) =>
+          String(opt.label).toLowerCase().includes(filterText.toLowerCase())
+        )
+      : options;
+
+  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFilterText(e.target.value);
+  };
+
+  const handleClose = () => {
+    setFilterText('');
+  };
+
   return (
     <FormControl fullWidth={fullWidth} size={size} required={required} error={error} disabled={disabled}>
-      <InputLabel>{label}</InputLabel>
+      <FormLabel
+        component="label"
+        htmlFor={selectId}
+        required={required}
+        error={error}
+        sx={{ mb: 0.5, display: 'block' }}
+      >
+        {label}
+      </FormLabel>
       <MuiSelect
+        id={selectId}
         value={value ?? (multiple ? [] : '')}
         onChange={handleChange}
-        input={<OutlinedInput label={label} />}
+        onClose={handleClose}
+        input={<OutlinedInput />}
+        MenuProps={{
+          autoFocus: false,
+        }}
         multiple={multiple}
         disabled={disabled || isLoading}
-        endAdornment={isLoading ? <CircularProgress size={20} /> : undefined}
+        endAdornment={
+          isLoading ? (
+            <CircularProgress size={20} />
+          ) : refreshable && onRefresh ? (
+            <InputAdornment position="end" sx={{ mr: 2 }}>
+              <IconButton
+                size="small"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRefresh();
+                }}
+                disabled={disabled}
+                aria-label="Refresh options"
+              >
+                <RefreshIcon fontSize="small" />
+              </IconButton>
+            </InputAdornment>
+          ) : undefined
+        }
         renderValue={(selected) => {
           if (multiple) {
             const selectedValues = selected as (string | number)[];
@@ -87,7 +149,25 @@ export const SimpleSelect: React.FC<SimpleSelectProps> = ({
           return option?.label || selected || <em>{placeholder || 'Select...'}</em>;
         }}
       >
-        {options.map((option) => (
+        {filterable && (
+          <ListSubheader
+            sx={{ py: 1 }}
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <TextField
+              size="small"
+              fullWidth
+              placeholder={filterPlaceholder}
+              value={filterText}
+              onChange={handleFilterChange}
+              variant="outlined"
+              sx={{ mt: -0.5 }}
+              autoFocus
+            />
+          </ListSubheader>
+        )}
+        {filteredOptions.map((option) => (
           <MenuItem key={option.value} value={option.value}>
             {option.label}
           </MenuItem>

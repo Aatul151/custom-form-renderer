@@ -40,7 +40,7 @@ export const FormViewMode = ({ formSchema, initialValues, hideTitle = false, ser
               >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <DoubleArrowOutlinedIcon fontSize="small" sx={{ color: formColors.primary }} />
-                  <Typography variant="subtitle1" sx={{ fontWeight: 600, color: formColors.primary }}>
+                  <Typography variant="subtitle1" sx={{ color: formColors.primary }}>
                     {section.title}
                   </Typography>
                 </Box>

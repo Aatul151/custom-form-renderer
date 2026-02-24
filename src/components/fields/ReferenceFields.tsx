@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect, useState } from 'react';
+import React, { useMemo, useEffect, useState, useCallback } from 'react';
 import { Controller } from 'react-hook-form';
 import { FieldRendererProps, OptionItem } from '../../types';
 import { getDefaultValue } from '../../utils/formHelpers';
@@ -16,9 +16,8 @@ export const FormReferenceField = ({ field, control, defaultValue, rules, errors
 
   const formReferenceService = services?.formReference || defaultFormReferenceService;
 
-  useEffect(() => {
+  const fetchOptions = useCallback(() => {
     if (!field.referenceFormName || !field.referenceFieldName) return;
-
     setIsLoading(true);
     formReferenceService
       .fetchOptions(field.referenceFormName, field.referenceFieldName)
@@ -34,6 +33,10 @@ export const FormReferenceField = ({ field, control, defaultValue, rules, errors
       });
   }, [field.referenceFormName, field.referenceFieldName, formReferenceService]);
 
+  useEffect(() => {
+    fetchOptions();
+  }, [fetchOptions]);
+
   // Convert OptionItem[] to SimpleSelectOption[]
   const selectOptions: SimpleSelectOption[] = useMemo(() => {
     return options.map((opt: OptionItem) => ({
@@ -46,9 +49,6 @@ export const FormReferenceField = ({ field, control, defaultValue, rules, errors
   const fieldRules = rules ?? buildFieldRules(field);
   const isDisabled = !field.referenceFormName || !field.referenceFieldName;
 
-  // Use custom SelectComponent if provided, otherwise use SimpleSelect
-  const SelectComponent = services?.SelectComponent || SimpleSelect;
-
   return (
     <Controller
       key={field.name}
@@ -58,7 +58,7 @@ export const FormReferenceField = ({ field, control, defaultValue, rules, errors
       rules={fieldRules}
       render={({ field: formField }) => {
         return (
-          <SelectComponent
+          <SimpleSelect
             label={field.label}
             value={formField.value}
             onChange={(value: string | string[] | null) => {
@@ -74,6 +74,8 @@ export const FormReferenceField = ({ field, control, defaultValue, rules, errors
             disabled={isDisabled || isLoading}
             multiple={isMultiple}
             isLoading={isLoading}
+            refreshable={true}
+            onRefresh={fetchOptions}
           />
         );
       }}
@@ -88,9 +90,8 @@ export const ApiReferenceField = ({ field, control, defaultValue, rules, errors,
 
   const apiReferenceService = services?.apiReference || defaultApiReferenceService;
 
-  useEffect(() => {
+  const fetchOptions = useCallback(() => {
     if (!field.apiEndpoint || !field.apiLabelField) return;
-
     setIsLoading(true);
     apiReferenceService
       .fetchOptions(field.apiEndpoint, field.apiLabelField, field.apiValueField || '_id')
@@ -106,6 +107,10 @@ export const ApiReferenceField = ({ field, control, defaultValue, rules, errors,
       });
   }, [field.apiEndpoint, field.apiLabelField, field.apiValueField, apiReferenceService]);
 
+  useEffect(() => {
+    fetchOptions();
+  }, [fetchOptions]);
+
   // Convert OptionItem[] to SimpleSelectOption[]
   const selectOptions: SimpleSelectOption[] = useMemo(() => {
     return options.map((opt: OptionItem) => ({
@@ -118,9 +123,6 @@ export const ApiReferenceField = ({ field, control, defaultValue, rules, errors,
   const fieldRules = rules ?? buildFieldRules(field);
   const isDisabled = !field.apiEndpoint || !field.apiLabelField;
 
-  // Use custom SelectComponent if provided, otherwise use SimpleSelect
-  const SelectComponent = services?.SelectComponent || SimpleSelect;
-
   return (
     <Controller
       key={field.name}
@@ -130,7 +132,7 @@ export const ApiReferenceField = ({ field, control, defaultValue, rules, errors,
       rules={fieldRules}
       render={({ field: formField }) => {
         return (
-          <SelectComponent
+          <SimpleSelect
             label={field.label}
             value={formField.value}
             onChange={(value: string | string[] | null) => {
@@ -146,6 +148,8 @@ export const ApiReferenceField = ({ field, control, defaultValue, rules, errors,
             disabled={isDisabled || isLoading}
             multiple={isMultiple}
             isLoading={isLoading}
+            refreshable={true}
+            onRefresh={fetchOptions}
           />
         );
       }}

@@ -1,6 +1,6 @@
 {
   "name": "@aatulwork/customform-renderer",
-  "version": "1.9.0",
+  "version": "1.15.1",
   "description": "A powerful, reusable form renderer component for React with Material-UI support",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -10,6 +10,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
+    },
+    "./fields": {
+      "types": "./dist/fields.d.ts",
+      "import": "./dist/fields.mjs",
+      "require": "./dist/fields.js"
     },
     "./lib/ckeditor/ckeditor.js": "./lib/ckeditor/ckeditor.js",
     "./vite": {

@@ -4,7 +4,7 @@ import { FieldRendererProps } from '../../types';
 import { normalizeOptions } from '../../utils/fieldHelpers';
 import { SimpleSelect, SimpleSelectOption } from '../common/SimpleSelect';
 
-export const SelectField = ({ field, control, defaultValue, rules, errors, services }: FieldRendererProps) => {
+export const SelectField = ({ field, control, defaultValue, rules, errors }: FieldRendererProps) => {
   const isMultiple = field.allowMultiple || false;
   const normalizedOptions = normalizeOptions(field.options);
 
@@ -16,9 +16,6 @@ export const SelectField = ({ field, control, defaultValue, rules, errors, servi
     }));
   }, [normalizedOptions]);
 
-  // Use custom SelectComponent if provided, otherwise use SimpleSelect
-  const SelectComponent = services?.SelectComponent || SimpleSelect;
-
   return (
     <Controller
       key={field.name}
@@ -28,7 +25,7 @@ export const SelectField = ({ field, control, defaultValue, rules, errors, servi
       rules={rules}
       render={({ field: formField }) => {
         return (
-          <SelectComponent
+          <SimpleSelect
             label={field.label}
             value={formField.value}
             onChange={(value: string | string[] | null) => {

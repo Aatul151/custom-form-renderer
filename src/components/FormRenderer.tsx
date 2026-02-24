@@ -238,7 +238,7 @@ export const FormRenderer = ({
                 {formSchema.sections.map((section) => (
                   <Step key={section.id}>
                     <StepLabel>
-                      <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                      <Typography variant="subtitle1">
                         {section.title}
                       </Typography>
                     </StepLabel>
@@ -308,7 +308,7 @@ export const FormRenderer = ({
                 >
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <DoubleArrowOutlinedIcon fontSize="small" sx={{ color: formColors.primary }} />
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600, color: formColors.primary }}>
+                    <Typography variant="subtitle1" sx={{ color: formColors.primary }}>
                       {section.title}
                     </Typography>
                   </Box>
