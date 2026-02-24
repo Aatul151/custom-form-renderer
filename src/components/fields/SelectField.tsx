@@ -1,10 +1,10 @@
-import { useMemo } from 'react';
+import React, { useMemo } from 'react';
+import { Controller } from 'react-hook-form';
 import { FieldRendererProps } from '../../types';
 import { normalizeOptions } from '../../utils/fieldHelpers';
-import { SimpleSelectOption } from '../common/SimpleSelect';
-import { FormAutocompleteField } from '../common/FormAutocompleteField';
+import { SimpleSelect, SimpleSelectOption } from '../common/SimpleSelect';
 
-export const SelectField = ({ field, control, defaultValue, rules, errors }: FieldRendererProps) => {
+export const SelectField = ({ field, control, defaultValue, rules, errors, services }: FieldRendererProps) => {
   const isMultiple = field.allowMultiple || false;
   const normalizedOptions = normalizeOptions(field.options);
 
@@ -16,18 +16,36 @@ export const SelectField = ({ field, control, defaultValue, rules, errors }: Fie
     }));
   }, [normalizedOptions]);
 
+  // Use custom SelectComponent if provided, otherwise use SimpleSelect
+  const SelectComponent = services?.SelectComponent || SimpleSelect;
+
   return (
-    <>
-      <FormAutocompleteField
-        name={field.name}
-        control={control}
-        defaultValue={defaultValue}
-        rules={rules}
-        field={field}
-        errors={errors}
-        options={selectOptions}
-        isMultiple={isMultiple}
-      />
-    </>
+    <Controller
+      key={field.name}
+      name={field.name}
+      control={control}
+      defaultValue={defaultValue}
+      rules={rules}
+      render={({ field: formField }) => {
+        return (
+          <SelectComponent
+            label={field.label}
+            value={formField.value}
+            onChange={(value: string | string[] | null) => {
+              formField.onChange(value);
+            }}
+            options={selectOptions}
+            placeholder={field.placeholder || 'Select...'}
+            helperText={errors[field.name]?.message as string}
+            fullWidth={true}
+            size="small"
+            required={field.required}
+            error={!!errors[field.name]}
+            disabled={false}
+            multiple={isMultiple}
+          />
+        );
+      }}
+    />
   );
 };

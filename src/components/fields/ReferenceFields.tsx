@@ -1,13 +1,13 @@
-import { useMemo, useEffect, useState } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
+import { Controller } from 'react-hook-form';
 import { FieldRendererProps, OptionItem } from '../../types';
 import { getDefaultValue } from '../../utils/formHelpers';
 import { buildFieldRules } from '../../utils/fieldHelpers';
-import { SimpleSelectOption } from '../common/SimpleSelect';
+import { SimpleSelect, SimpleSelectOption } from '../common/SimpleSelect';
 import {
   defaultFormReferenceService,
   defaultApiReferenceService,
 } from '../../services/defaultServices';
-import { FormAutocompleteField } from '../common/FormAutocompleteField';
 
 export const FormReferenceField = ({ field, control, defaultValue, rules, errors, services }: FieldRendererProps) => {
   const isMultiple = field.allowMultiple || false;
@@ -17,10 +17,6 @@ export const FormReferenceField = ({ field, control, defaultValue, rules, errors
   const formReferenceService = services?.formReference || defaultFormReferenceService;
 
   useEffect(() => {
-    refresh()
-  }, [field.referenceFormName, field.referenceFieldName, formReferenceService]);
-
-  const refresh = () => {
     if (!field.referenceFormName || !field.referenceFieldName) return;
 
     setIsLoading(true);
@@ -36,7 +32,7 @@ export const FormReferenceField = ({ field, control, defaultValue, rules, errors
       .finally(() => {
         setIsLoading(false);
       });
-  }
+  }, [field.referenceFormName, field.referenceFieldName, formReferenceService]);
 
   // Convert OptionItem[] to SimpleSelectOption[]
   const selectOptions: SimpleSelectOption[] = useMemo(() => {
@@ -50,19 +46,37 @@ export const FormReferenceField = ({ field, control, defaultValue, rules, errors
   const fieldRules = rules ?? buildFieldRules(field);
   const isDisabled = !field.referenceFormName || !field.referenceFieldName;
 
+  // Use custom SelectComponent if provided, otherwise use SimpleSelect
+  const SelectComponent = services?.SelectComponent || SimpleSelect;
+
   return (
-    <FormAutocompleteField
+    <Controller
+      key={field.name}
       name={field.name}
       control={control}
       defaultValue={fieldDefaultValue}
       rules={fieldRules}
-      field={field}
-      errors={errors}
-      options={selectOptions}
-      isMultiple={isMultiple}
-      isDisabled={isDisabled}
-      isLoading={isLoading}
-      refresh={refresh}
+      render={({ field: formField }) => {
+        return (
+          <SelectComponent
+            label={field.label}
+            value={formField.value}
+            onChange={(value: string | string[] | null) => {
+              formField.onChange(value);
+            }}
+            options={selectOptions}
+            placeholder={field.placeholder || 'Search and select...'}
+            helperText={errors[field.name]?.message as string}
+            fullWidth={true}
+            size="small"
+            required={field.required}
+            error={!!errors[field.name]}
+            disabled={isDisabled || isLoading}
+            multiple={isMultiple}
+            isLoading={isLoading}
+          />
+        );
+      }}
     />
   );
 };
@@ -75,10 +89,6 @@ export const ApiReferenceField = ({ field, control, defaultValue, rules, errors,
   const apiReferenceService = services?.apiReference || defaultApiReferenceService;
 
   useEffect(() => {
-    refreshApi()
-  }, [field.apiEndpoint, field.apiLabelField, field.apiValueField, apiReferenceService]);
-
-  const refreshApi = () => {
     if (!field.apiEndpoint || !field.apiLabelField) return;
 
     setIsLoading(true);
@@ -94,7 +104,7 @@ export const ApiReferenceField = ({ field, control, defaultValue, rules, errors,
       .finally(() => {
         setIsLoading(false);
       });
-  }
+  }, [field.apiEndpoint, field.apiLabelField, field.apiValueField, apiReferenceService]);
 
   // Convert OptionItem[] to SimpleSelectOption[]
   const selectOptions: SimpleSelectOption[] = useMemo(() => {
@@ -108,20 +118,37 @@ export const ApiReferenceField = ({ field, control, defaultValue, rules, errors,
   const fieldRules = rules ?? buildFieldRules(field);
   const isDisabled = !field.apiEndpoint || !field.apiLabelField;
 
+  // Use custom SelectComponent if provided, otherwise use SimpleSelect
+  const SelectComponent = services?.SelectComponent || SimpleSelect;
+
   return (
-    <FormAutocompleteField
-      name={field?.name}
+    <Controller
+      key={field.name}
+      name={field.name}
       control={control}
       defaultValue={fieldDefaultValue}
       rules={fieldRules}
-      field={field}
-      errors={errors}
-      options={selectOptions}
-      isMultiple={isMultiple}
-      isDisabled={isDisabled}
-      isLoading={isLoading}
-      placeholder="Search and select..."
-      refresh={refreshApi}
+      render={({ field: formField }) => {
+        return (
+          <SelectComponent
+            label={field.label}
+            value={formField.value}
+            onChange={(value: string | string[] | null) => {
+              formField.onChange(value);
+            }}
+            options={selectOptions}
+            placeholder={field.placeholder || 'Search and select...'}
+            helperText={errors[field.name]?.message as string}
+            fullWidth={true}
+            size="small"
+            required={field.required}
+            error={!!errors[field.name]}
+            disabled={isDisabled || isLoading}
+            multiple={isMultiple}
+            isLoading={isLoading}
+          />
+        );
+      }}
     />
   );
 };
