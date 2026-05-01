@@ -1,6 +1,6 @@
 import React from 'react';
 import { Controller } from 'react-hook-form';
-import { FormControlLabel, Switch, Box, Typography } from '@mui/material';
+import { FormControlLabel, Switch, Box, Typography, FormLabel } from '@mui/material';
 import { FieldRendererProps } from '../../types';
 
 export const ToggleField = ({ field, control, defaultValue, rules, errors }: FieldRendererProps) => {
@@ -12,7 +12,9 @@ export const ToggleField = ({ field, control, defaultValue, rules, errors }: Fie
       defaultValue={defaultValue}
       rules={rules}
       render={({ field: formField }) => (
+
         <FormControlLabel
+          labelPlacement="start"
           control={
             <Switch
               {...formField}
@@ -22,9 +24,7 @@ export const ToggleField = ({ field, control, defaultValue, rules, errors }: Fie
           }
           label={
             <Box>
-              <Typography variant="body2">
-                {field.label} {field.required && '*'}
-              </Typography>
+              <FormLabel> {field.label} {field.required && '*'}</FormLabel>
               {errors[field.name] && (
                 <Typography variant="caption" color="error" sx={{ display: 'block', mt: 0.5 }}>
                   {errors[field.name]?.message as string}
@@ -32,6 +32,7 @@ export const ToggleField = ({ field, control, defaultValue, rules, errors }: Fie
               )}
             </Box>
           }
+          sx={{ marginLeft: "0 !important" }}
         />
       )}
     />

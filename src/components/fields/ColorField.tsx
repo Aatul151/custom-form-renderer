@@ -39,10 +39,11 @@ export const ColorField = ({ field, control, defaultValue, rules, errors }: Fiel
                 padding: 0,
                 cursor: 'pointer',
                 backgroundColor: 'transparent',
-                border: 'none',
+                border: '1px solid #c4c4c4',
+                borderRadius:"4px",
                 '&::-webkit-color-swatch-wrapper': { padding: 0 },
-                '&::-webkit-color-swatch': { border: 'none', borderRadius: '4px' },
-                '&::-moz-color-swatch': { border: 'none', borderRadius: '4px' },
+                '&::-webkit-color-swatch': { border: '1px solid #c4c4c4', borderRadius: '4px' },
+                '&::-moz-color-swatch': { border: '1px solid #c4c4c4', borderRadius: '4px' },
               }}
             />
             {errors[field.name] && (
