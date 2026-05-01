@@ -12,6 +12,7 @@ import {
   getFormReferenceCacheKey,
   getApiReferenceCacheKey,
 } from '../../utils/referenceOptionsCache';
+import { CheckCircle, Close } from '@mui/icons-material';
 
 interface FieldViewProps {
   field: FormField;
@@ -140,10 +141,10 @@ export const FieldView = ({ field, value, services }: FieldViewProps) => {
             borderColor: 'divider',
           }}
         >
-        <Typography variant="body2" sx={{ fontWeight: 500, color: fieldLabelColor }}>
-          {field.label}
-        </Typography>
-        <CKEditorDisplayComponent
+          <Typography variant="body2" sx={{ fontWeight: 500, color: fieldLabelColor }}>
+            {field.label}
+          </Typography>
+          <CKEditorDisplayComponent
             content={value || ''}
             maxLength={150}
             showViewButton={true}
@@ -204,7 +205,7 @@ export const FieldView = ({ field, value, services }: FieldViewProps) => {
           lineHeight: 1.5,
         }}
       >
-        {formattedValue}
+        {field.type === 'toggle' ? (formattedValue == 'Yes' ? <CheckCircle color="success" /> : <Close color="error" />) : formattedValue}
       </Typography>
     </Box>
   );
