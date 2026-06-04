@@ -85,7 +85,10 @@ export interface FormSchema {
 
 export interface FormRendererProps {
   formSchema: FormSchema;
-  onSubmit?: (data: Record<string, any>) => void | Promise<void>;
+  onSubmit?: (
+    data: Record<string, any>,
+    populateField?: Record<string, OptionItem | OptionItem[] | null>
+  ) => void | Promise<void>;
   onCancel?: () => void;
   isLoading?: boolean;
   onSuccess?: () => void;

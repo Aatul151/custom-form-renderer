@@ -19,6 +19,7 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { FormRendererProps } from '../types';
 import { normalizeInitialValues, transformFormValues, getAllFields } from '../utils/formHelpers';
+import { populateFieldValues } from '../utils/populateFieldValues';
 import { useFormColors } from '../utils/useFormColors';
 import { FieldRenderer } from './FieldRenderer';
 import { FormViewMode } from './view/FormViewMode';
@@ -112,10 +113,11 @@ export const FormRenderer = ({
   const handleFormSubmit = async (data: Record<string, any>) => {
     setSubmitError(null);
     const transformedData = transformFormValues(data, formSchema);
+    const populateField = populateFieldValues(data, formSchema);
 
     if (onSubmit) {
       try {
-        await onSubmit(transformedData); 
+        await onSubmit(transformedData, populateField); 
         
         // After successful submit, reset form
         const resetValues = initialValues || {};

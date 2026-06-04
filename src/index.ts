@@ -50,6 +50,8 @@ export {
   getDefaultValue,
 } from './utils/formHelpers';
 
+export { populateFieldValues } from './utils/populateFieldValues';
+
 export {
   formatFileSize,
   validateFile,

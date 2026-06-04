@@ -228,6 +228,9 @@ After publishing:
    git push origin v1.0.0
    ```
 
+Open C:\Users\ATUL\.npmrc 
+- npm_token update in this file
+
 ## Example Workflow
 
 ```bash
