@@ -38,6 +38,10 @@ export interface FormField {
   name: string;
   required?: boolean;
   placeholder?: string;
+  /** For text type: render as textarea when true */
+  multiline?: boolean;
+  /** For multiline text: visible row count (default: 2) */
+  rows?: number;
   allowFilter?: boolean;
   options?: OptionItem[] | string[]; // Supports both OptionItem[] and legacy string[]
   validation?: FieldValidation;

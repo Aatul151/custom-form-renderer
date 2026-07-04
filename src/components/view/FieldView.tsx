@@ -203,6 +203,7 @@ export const FieldView = ({ field, value, services }: FieldViewProps) => {
           fontWeight: 400,
           fontSize: '0.875rem',
           lineHeight: 1.5,
+          ...(field.type === 'text' && field.multiline ? { whiteSpace: 'pre-wrap' } : {}),
         }}
       >
         {field.type === 'toggle' ? (formattedValue == 'Yes' ? <CheckCircle color="success" /> : <Close color="error" />) : formattedValue}

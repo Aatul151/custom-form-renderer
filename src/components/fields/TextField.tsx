@@ -4,6 +4,8 @@ import { FormControl, FormLabel, TextField as MuiTextField } from '@mui/material
 import { FieldRendererProps } from '../../types';
 
 export const TextField = ({ field, control, defaultValue, rules, errors }: FieldRendererProps) => {
+  const isMultiline = field.type === 'text' && field.multiline === true;
+
   return (
     <Controller
       key={field.name}
@@ -18,24 +20,49 @@ export const TextField = ({ field, control, defaultValue, rules, errors }: Field
           error={!!errors[field.name]}
         >
           <FormLabel> {field.label}</FormLabel>
-          <MuiTextField
-            {...formField}
-            type={field.type === 'number' ? 'number' : field.type}
-            placeholder={field.placeholder || 'Enter value'}
-            fullWidth
-            size="small"
-            required={field.required}
-            error={!!errors[field.name]}
-            helperText={errors[field.name]?.message as string}
-            inputProps={
-              field.type === 'number'
-                ? {
-                    min: field.validation?.min,
-                    max: field.validation?.max,
-                  }
-                : undefined
-            }
-          />
+          {isMultiline ? (
+            <MuiTextField
+              {...formField}
+              multiline
+              rows={field.rows ?? 2}
+              placeholder={field.placeholder || 'Enter value'}
+              fullWidth
+              size="small"
+              required={field.required}
+              error={!!errors[field.name]}
+              helperText={errors[field.name]?.message as string}
+              slotProps={{
+                input: {
+                  sx: {
+                    alignItems: 'flex-start',
+                    '& textarea': {
+                      resize: 'vertical',
+                      overflow: 'auto !important',
+                    },
+                  },
+                },
+              }}
+            />
+          ) : (
+            <MuiTextField
+              {...formField}
+              type={field.type === 'number' ? 'number' : field.type}
+              placeholder={field.placeholder || 'Enter value'}
+              fullWidth
+              size="small"
+              required={field.required}
+              error={!!errors[field.name]}
+              helperText={errors[field.name]?.message as string}
+              inputProps={
+                field.type === 'number'
+                  ? {
+                      min: field.validation?.min,
+                      max: field.validation?.max,
+                    }
+                  : undefined
+              }
+            />
+          )}
         </FormControl>
       )}
     />
